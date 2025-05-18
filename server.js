@@ -1,30 +1,35 @@
-// Step 1 import ....
-const express = require('express')
-const app = express()
-const morgan = require('morgan')
-const { readdirSync } = require('fs')
-const cors = require('cors')
-// const authRouter = require('./routes/auth')
-// const categoryRouter = require('./routes/category')
+// Step 1: Import modules
+const express = require('express');
+const app = express();
+const morgan = require('morgan');
+const { readdirSync } = require('fs');
+const cors = require('cors');
 
-// middleware
-app.use(morgan('dev'))
-app.use(express.json({ limit: '20mb' }))
-app.use(cors())
-// app.use('/api',authRouter)
-// app.use('/api',categoryRouter)
-readdirSync('./routes')
-    .map((c) => app.use('/api', require('./routes/' + c)))
+// Step 2: CORS configuration
+const allowedOrigins = ['https://client-fawn-six-77.vercel.app'];
 
-// Step 3 Router
-// app.post('/api',(req,res)=>{
-//     // code
-//     const { username,password } = req.body
-//     console.log(username,password)
-//     res.send('Jukkru 555+')
-// })
-// Step 2 Start Server
-app.listen(5001,
-    () => console.log('Server is running on port 5001'))
+app.use(cors({
+  origin: function (origin, callback) {
+    if (!origin || allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error('Not allowed by CORS'));
+    }
+  },
+  credentials: true // เปิดไว้ถ้ามี auth header หรือ cookie
+}));
 
+// Step 3: Middleware
+app.use(morgan('dev'));
+app.use(express.json({ limit: '20mb' }));
 
+// Step 4: Load all routes in the routes folder
+readdirSync('./routes').map((routeFile) =>
+  app.use('/api', require('./routes/' + routeFile))
+);
+
+// Step 5: Start server
+const PORT = process.env.PORT || 5001;
+app.listen(PORT, () => {
+  console.log(`Server is running on port ${PORT}`);
+});
