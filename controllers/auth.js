@@ -5,45 +5,49 @@ const jwt = require('jsonwebtoken')
 
 exports.register = async (req, res) => {
     try {
-        //code
-        const { email, password } = req.body
+        const { email, password, name, address, phone } = req.body;
 
-        // Step 1 Validate body
-        if (!email) {
-            return res.status(400).json({ message: 'Email is required!!!' })
-        }
-        if (!password) {
-            return res.status(400).json({ message: "Password is required!!!" })
+        // Validate
+        if (!email || !password || !name || !address || !phone) {
+            return res.status(400).json({ message: 'All fields are required!' });
         }
 
-        // Step 2 Check Email in DB already ?
-        const user = await prisma.user.findFirst({
-            where: {
-                email: email
-            }
-        })
-        if (user) {
-            return res.status(400).json({ message: "Email already exits!!" })
+        // Check email exists
+        const existingUser = await prisma.user.findFirst({ where: { email } });
+        if (existingUser) {
+            return res.status(400).json({ message: 'Email already exists!' });
         }
-        // Step 3 HashPassword
-        const hashPassword = await bcrypt.hash(password, 10)
 
-        // Step 4 Register
+        // Check phone exists
+        const existingPhone = await prisma.user.findFirst({ where: { phone } });
+        if (existingPhone) {
+            return res.status(400).json({ message: 'Phone already exists!' });
+        }
+
+        // Hash password
+        const hashPassword = await bcrypt.hash(password, 10);
+
+        // Create user
         await prisma.user.create({
             data: {
-                email: email,
-                password: hashPassword
-            }
-        })
+                email,
+                password: hashPassword,
+                name,
+                address,
+                phone,           // <- สำคัญ
+                // picture,      // ไม่ต้องส่ง มี default
+                // role,         // ไม่ต้องส่ง มี default
+                // enabled,      // ไม่ต้องส่ง มี default
+            },
+        });
 
-
-        res.send('Register Success')
+        res.send('Register Success');
     } catch (err) {
-        // err
-        console.log(err)
-        res.status(500).json({ message: "Server Error" })
+        console.log(err);
+        res.status(500).json({ message: 'Server Error' });
     }
-}
+};
+
 
 exports.login = async (req, res) => {
     try {
